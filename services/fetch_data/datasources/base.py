@@ -1,0 +1,3 @@
+
+class BaseDatasource(object):
+    pass

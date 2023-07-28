@@ -1,0 +1,3 @@
+
+class DatasourceConfigError(Exception):
+    pass
