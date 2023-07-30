@@ -11,6 +11,7 @@ class Job(Base):
     external_id = Column(types.String, nullable=True)
     number = Column(types.Integer, nullable=False)
     status = Column(types.String)
+    name = Column(types.String)
     started_at = Column(types.DateTime)
     stopped_at = Column(types.DateTime)
     workflow_id = Column("workflow_id", types.Integer, ForeignKey("workflows.id"))

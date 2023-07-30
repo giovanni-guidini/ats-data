@@ -95,7 +95,7 @@ class CircleCIDataDriver(object):
             name=circleci_data["name"],
             number=circleci_data["job_number"],
             status=circleci_data["status"],
-            started_at=datetime.fromisoformat(circleci_data["created_at"][:19]),
+            started_at=datetime.fromisoformat(circleci_data["started_at"][:19]),
             stopped_at=datetime.fromisoformat(circleci_data["stopped_at"][:19]),
         )
         return job

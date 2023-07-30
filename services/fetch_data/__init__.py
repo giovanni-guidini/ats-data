@@ -32,9 +32,7 @@ class FetchDataService(object):
                 raw_data_to_insert,
             )
         )
-        for object in objects_to_insert:
-            self.dbsession.add(object)
-            yield object
+        self.dbsession.add_all(objects_to_insert)
         # Update models we do have
         models_to_update = sorted(
             self.dbsession.query(model.id).filter(model.id.in_(all_ids)).all(),
@@ -45,23 +43,30 @@ class FetchDataService(object):
             key=lambda item: item["id"],
         )
         data_pack = zip(models_to_update, raw_data_to_update)
+        updated_objects = []
         for pair in data_pack:
-            model, raw_data = pair
+            instance, raw_data = pair
             updated = False
             for field in update_fields:
                 # We need to annotate what models actually changed
-                if getattr(model, field.model_field) != raw_data[field.raw_data_field]:
+                if (
+                    getattr(instance, field.model_field)
+                    != raw_data[field.raw_data_field]
+                ):
                     updated = True
-                setattr(model, field.model_field, raw_data[field.raw_data_field])
+                    setattr(instance, field.model_field, raw_data[field.raw_data_field])
             if updated:
-                yield model
+                updated_objects.append(instance)
+        return objects_to_insert + updated_objects
 
     async def sync_pipelines(self, project: Project, datasource):
         pipelines = await datasource.get_all_project_pipelines(project)
         fields_to_update = [UpdateFields("status", "state")]
-        return self._sync_model(
+        synced_pipelines = self._sync_model(
             pipelines, Pipeline, datasource.data_driver, fields_to_update
         )
+        self.dbsession.flush()
+        return synced_pipelines
 
     async def sync_workflows(self, pipeline: Pipeline, datasource):
         workflows = await datasource.get_pipeline_workflows(pipeline)
@@ -69,9 +74,11 @@ class FetchDataService(object):
             UpdateFields("status", "status"),
             UpdateFields("stopped_at", "stopped_at"),
         ]
-        return self._sync_model(
+        synced_workflows = self._sync_model(
             workflows, Workflow, datasource.data_driver, fields_to_update
         )
+        self.dbsession.flush()
+        return synced_workflows
 
     async def sync_jobs(self, workflow: Workflow, datasource):
         jobs_data = await datasource.get_workflow_jobs(workflow)
@@ -79,9 +86,11 @@ class FetchDataService(object):
             UpdateFields("status", "status"),
             UpdateFields("stopped_at", "stopped_at"),
         ]
-        return self._sync_model(
+        synced_jobs = self._sync_model(
             jobs_data, Job, datasource.data_driver, fields_to_update
         )
+        self.dbsession.flush()
+        return synced_jobs
 
     async def sync_project(self, project: Project):
         datasource_class = get_datasource_class(project.ci_provider)
