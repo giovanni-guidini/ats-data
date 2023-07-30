@@ -18,10 +18,10 @@ jobs:
           pip install black==22.3.0 isort==5.10.1
       - name: Check linting with black
         run: |
-          black --check codecov_cli
+          black --check .
       - name: Check imports order with isort
         run: |
-          isort --check --profile=black codecov_cli -p staticcodecov_languages
+          isort --check --profile=black .
 
   codecov-startup:
     runs-on: ubuntu-latest

@@ -2,3 +2,8 @@ httpx
 sqlalchemy
 asyncio
 pyyaml
+pytest
+pytest-cov
+pytest-mock
+pytest-factoryboy
+pytest-asyncio
