@@ -1,33 +1,41 @@
 import asyncio
-from database.engine import get_dbsession
-from config import load_config
-from database.models.pipeline import Pipeline
-from services.fetch_data.datasources.circleci import CircleCIDatasource
-from datetime import datetime
 
-def circleci_to_pipeline(dbsession, runs_info: dict):
-    for pipeline in runs_info.get('items', []):
-        obj = Pipeline()
-        obj.pipeline_id = pipeline['id']
-        obj.created_at = datetime.fromisoformat(pipeline['created_at'][:19])
-        obj.status = pipeline['state']
-        obj.run_number = pipeline['number']
-        dbsession.add(obj)
+from config import load_config
+from database.engine import get_dbsession
+from database.models.enums import CiProviders, GitProviders
+from database.models.organization import Organization
+from database.models.pipeline import Pipeline
+from database.models.project import Project
+from services.fetch_data import FetchDataService
+
 
 async def main():
 
     config = load_config()
-    circleci = CircleCIDatasource(config=config)
 
     dbsession = get_dbsession()
 
-    runs_info = await circleci.get_all_project_pipelines('gh/codecov/shared')
-    circleci_to_pipeline(dbsession, runs_info)
+    organization = Organization(name="codecov")
+    dbsession.add(organization)
+
+    project = Project(
+        ci_provider=CiProviders.circleci,
+        git_provider=GitProviders.github,
+        name="shared",
+        organization=organization,
+    )
+    dbsession.add(project)
+
     dbsession.flush()
-    
-    saved_info = dbsession.query(Pipeline).all()
+
+    fetch_service = FetchDataService(dbsession, config)
+    await fetch_service.sync_project(project)
+
+    print("Finished syncing project data")
+
     # TODO: Actually save info in the DB
-    
+    dbsession.commit()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

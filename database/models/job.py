@@ -4,14 +4,14 @@ from sqlalchemy.orm import relationship
 from database.models.base import Base
 
 
-class Pipeline(Base):
-    __tablename__ = "pipelines"
+class Job(Base):
+    __tablename__ = "jobs"
 
     id = Column("id", types.Integer, primary_key=True)
     external_id = Column(types.String, nullable=True)
     number = Column(types.Integer, nullable=False)
     status = Column(types.String)
-    created_at = Column(types.DateTime)
-    project_id = Column("project_id", types.Integer, ForeignKey("projects.id"))
-    project = relationship("Project", back_populates="pipelines")
-    workflows = relationship("Workflow", back_populates="pipeline")
+    started_at = Column(types.DateTime)
+    stopped_at = Column(types.DateTime)
+    workflow_id = Column("workflow_id", types.Integer, ForeignKey("workflows.id"))
+    workflow = relationship("Workflow", back_populates="jobs")
