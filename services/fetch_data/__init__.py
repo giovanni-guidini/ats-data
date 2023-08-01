@@ -82,12 +82,28 @@ class FetchDataService(object):
 
     async def sync_jobs(self, workflow: Workflow, datasource):
         jobs_data = await datasource.get_workflow_jobs(workflow)
+        # We don't need to save all jobs, only the ones that interest us
+        standarized_data = list(
+            map(
+                lambda item: datasource.data_driver.to_db_representation(item, Job),
+                jobs_data,
+            )
+        )
+        pairs = zip(jobs_data, standarized_data)
+        jobs_of_interest = []
+        for raw_data, parsed_data in pairs:
+            if parsed_data.name in [
+                workflow.label_analysis_job_name,
+                workflow.regular_tests_job_name,
+            ]:
+                jobs_of_interest.append(raw_data)
+
         fields_to_update = [
             UpdateFields("status", "status"),
             UpdateFields("stopped_at", "stopped_at"),
         ]
         synced_jobs = self._sync_model(
-            jobs_data, Job, datasource.data_driver, fields_to_update
+            jobs_of_interest, Job, datasource.data_driver, fields_to_update
         )
         self.dbsession.flush()
         return synced_jobs
@@ -99,10 +115,24 @@ class FetchDataService(object):
         datasource: BaseDatasource = datasource_class(self.config)
 
         # Sync pipelines
-        for pipeline in await self.sync_pipelines(
+        synced_pipelines = await self.sync_pipelines(
             project=project, datasource=datasource
-        ):
-            # Sync workflows
-            for workflow in await self.sync_workflows(pipeline, datasource):
-                # Sync Jobs
-                await self.sync_jobs(workflow, datasource)
+        )
+        # Sync workflows
+        all_synced_workflows = await asyncio.gather(
+            *[
+                asyncio.create_task(
+                    self.sync_workflows(pipeline=pipeline, datasource=datasource)
+                )
+                for pipeline in synced_pipelines
+            ]
+        )
+        for synced_workflows in all_synced_workflows:
+            # For some reason this will return a list of lists
+            # Sync Jobs
+            await asyncio.gather(
+                *[
+                    asyncio.create_task(self.sync_jobs(workflow, datasource))
+                    for workflow in synced_workflows
+                ]
+            )

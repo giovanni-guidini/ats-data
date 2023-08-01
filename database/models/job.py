@@ -16,3 +16,7 @@ class Job(Base):
     stopped_at = Column(types.DateTime)
     workflow_id = Column("workflow_id", types.Integer, ForeignKey("workflows.id"))
     workflow = relationship("Workflow", back_populates="jobs")
+
+    @property
+    def duration(self):
+        return self.stopped_at - self.started_at

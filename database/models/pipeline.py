@@ -15,3 +15,15 @@ class Pipeline(Base):
     project_id = Column("project_id", types.Integer, ForeignKey("projects.id"))
     project = relationship("Project", back_populates="pipelines")
     workflows = relationship("Workflow", back_populates="pipeline")
+    totals_id = Column(
+        "totals_id", types.Integer, ForeignKey("totals.id"), nullable=True
+    )
+    totals = relationship("Totals")
+
+    @property
+    def label_analysis_job_name(self):
+        return self.project.label_analysis_job_name
+
+    @property
+    def regular_tests_job_name(self):
+        return self.project.regular_tests_job_name
