@@ -14,6 +14,8 @@ class Project(Base):
     git_provider = Column(types.Enum(GitProviders))
     name = Column(types.String)
     ci_provider = Column(types.Enum(CiProviders))
+    # TODO: Add support for multiple regular-tests / label-analysis jobs
+    # (e.g. sentry has concurrency that runs 5 of each)
     label_analysis_job_name = Column(types.String)
     regular_tests_job_name = Column(types.String)
     # Relationships to other models

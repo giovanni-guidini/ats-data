@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, types
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy.orm import Mapped, relationship
 
 from database.models.base import Base
 from database.models.pipeline import Pipeline

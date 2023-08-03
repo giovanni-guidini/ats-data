@@ -5,8 +5,13 @@ from typing import List
 from database.models import Job, Pipeline, Project, Workflow
 from services.fetch_data.datasources import BaseDatasource, get_datasource_class
 from services.fetch_data.datasources.error import DatasourceNotFoundError
+from utils.logging_config import LOGGER_NAME
 
 UpdateFields = namedtuple("UpdateField", ["model_field", "raw_data_field"])
+
+import logging
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class FetchDataService(object):
@@ -60,52 +65,82 @@ class FetchDataService(object):
         return objects_to_insert + updated_objects
 
     async def sync_pipelines(self, project: Project, datasource):
-        pipelines = await datasource.get_all_project_pipelines(project)
+        all_synced_pipelines = []
         fields_to_update = [UpdateFields("status", "state")]
-        synced_pipelines = self._sync_model(
-            pipelines, Pipeline, datasource.data_driver, fields_to_update
+        async for pipelines in datasource.get_all_project_pipelines(project):
+            synced_pipelines = self._sync_model(
+                pipelines, Pipeline, datasource.data_driver, fields_to_update
+            )
+            self.dbsession.flush()
+            all_synced_pipelines.extend(synced_pipelines)
+        logger.info(
+            f"Synced all pipelines",
+            extra=dict(
+                extra_log_attributes=dict(
+                    project=project.id, pipeline_count=len(all_synced_pipelines)
+                )
+            ),
         )
-        self.dbsession.flush()
-        return synced_pipelines
+        return all_synced_pipelines
 
     async def sync_workflows(self, pipeline: Pipeline, datasource):
-        workflows = await datasource.get_pipeline_workflows(pipeline)
+        all_synced_workflows = []
         fields_to_update = [
             UpdateFields("status", "status"),
             UpdateFields("stopped_at", "stopped_at"),
         ]
-        synced_workflows = self._sync_model(
-            workflows, Workflow, datasource.data_driver, fields_to_update
+        async for workflows in datasource.get_pipeline_workflows(pipeline):
+            synced_workflows = self._sync_model(
+                workflows, Workflow, datasource.data_driver, fields_to_update
+            )
+            self.dbsession.flush()
+            all_synced_workflows.extend(synced_workflows)
+        logger.info(
+            f"Synced all workflows",
+            extra=dict(
+                extra_log_attributes=dict(
+                    pipeline=pipeline.id, workflow_count=len(all_synced_workflows)
+                )
+            ),
         )
-        self.dbsession.flush()
-        return synced_workflows
+        return all_synced_workflows
 
     async def sync_jobs(self, workflow: Workflow, datasource):
-        jobs_data = await datasource.get_workflow_jobs(workflow)
-        # We don't need to save all jobs, only the ones that interest us
-        standarized_data = list(
-            map(
-                lambda item: datasource.data_driver.to_db_representation(item, Job),
-                jobs_data,
-            )
-        )
-        pairs = zip(jobs_data, standarized_data)
-        jobs_of_interest = []
-        for raw_data, parsed_data in pairs:
-            if parsed_data.name in [
-                workflow.label_analysis_job_name,
-                workflow.regular_tests_job_name,
-            ]:
-                jobs_of_interest.append(raw_data)
-
+        all_synced_jobs = []
         fields_to_update = [
             UpdateFields("status", "status"),
             UpdateFields("stopped_at", "stopped_at"),
         ]
-        synced_jobs = self._sync_model(
-            jobs_of_interest, Job, datasource.data_driver, fields_to_update
+        async for jobs_data in datasource.get_workflow_jobs(workflow):
+            # We don't need to save all jobs, only the ones that interest us
+            standarized_data = list(
+                map(
+                    lambda item: datasource.data_driver.to_db_representation(item, Job),
+                    jobs_data,
+                )
+            )
+            pairs = zip(jobs_data, standarized_data)
+            jobs_of_interest = []
+            for raw_data, parsed_data in pairs:
+                if parsed_data.name in [
+                    workflow.label_analysis_job_name,
+                    workflow.regular_tests_job_name,
+                ]:
+                    jobs_of_interest.append(raw_data)
+
+            synced_jobs = self._sync_model(
+                jobs_of_interest, Job, datasource.data_driver, fields_to_update
+            )
+            self.dbsession.flush()
+            all_synced_jobs.extend(synced_jobs)
+        logger.info(
+            f"Synced all jobs",
+            extra=dict(
+                extra_log_attributes=dict(
+                    workflow=workflow.id, job_count=len(all_synced_jobs)
+                )
+            ),
         )
-        self.dbsession.flush()
         return synced_jobs
 
     async def sync_project(self, project: Project):
