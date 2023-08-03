@@ -7,3 +7,5 @@ pytest-cov
 pytest-mock
 pytest-factoryboy
 pytest-asyncio
+matplotlib
+numpy

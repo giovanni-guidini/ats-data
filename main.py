@@ -1,27 +1,34 @@
 import asyncio
+import logging
 
 from config import load_config
+from database import models
 from database.engine import get_dbsession
 from database.models.enums import CiProviders, GitProviders
-from database import models
 from services.fetch_data import FetchDataService
 from services.process_data import ProcessDataService
+from utils.logging_config import LOGGER_NAME, configure_logger
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 async def collect_data(config, dbsession, project):
     fetch_service = FetchDataService(dbsession, config)
     await fetch_service.sync_project(project)
 
-    print("Finished syncing project data")
+    logger.info("Finished syncing project data")
     dbsession.flush()
 
 
 def process_data(config, dbsession, project):
     process_service = ProcessDataService(dbsession, config)
-    process_service.sync_project_metrics(project)
+    # process_service.sync_project_metrics(project)
 
-    print("Finished processing data")
-    dbsession.flush()
+    # logger.info("Finished processing data")
+    # dbsession.flush()
+
+    logger.info("Generating Workflow data plot")
+    process_service.plot_workflow_durations(project)
 
 
 def create_base_classes(dbsession):
@@ -44,6 +51,7 @@ def create_base_classes(dbsession):
 
 async def main():
 
+    configure_logger(logger=logger)
     config = load_config()
 
     dbsession = get_dbsession()
@@ -59,7 +67,7 @@ async def main():
     # TODO: Actually save info in the DB
     # dbsession.commit()
 
-    print("=> Project totals")
+    logger.info("=> Project totals")
     print(project.totals)
 
 
