@@ -82,8 +82,13 @@ class CircleCIDatasource(BaseDatasource):
         url = f"/pipeline/{pipeline.external_id}/workflow"
 
         async for page in self._paginated_requests("GET", url):
-            # Include the key `pipeline` in the data
             items = page.get("items", [])
+            items = filter(
+                lambda item: item["created_at"] is not None
+                and item["stopped_at"] is not None,
+                items,
+            )
+            # Include the key `pipeline` in the data
             extended_items = [{**item, "pipeline": pipeline} for item in items]
             yield extended_items
 
@@ -97,7 +102,11 @@ class CircleCIDatasource(BaseDatasource):
         async for page in self._paginated_requests("GET", url):
             items = page.get("items", [])
             # Filter jobs that don't have a started_at date
-            items = filter(lambda item: item["started_at"] is not None, items)
+            items = filter(
+                lambda item: item["started_at"] is not None
+                and item["stopped_at"] is not None,
+                items,
+            )
             # Extend raw data with `workflow` key
             extended_items = [{**item, "workflow": workflow} for item in items]
             yield extended_items

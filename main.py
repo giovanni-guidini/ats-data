@@ -22,10 +22,10 @@ async def collect_data(config, dbsession, project):
 
 def process_data(config, dbsession, project):
     process_service = ProcessDataService(dbsession, config)
-    # process_service.sync_project_metrics(project)
+    process_service.sync_project_metrics(project)
 
-    # logger.info("Finished processing data")
-    # dbsession.flush()
+    logger.info("Finished processing data")
+    dbsession.flush()
 
     logger.info("Generating Workflow data plot")
     process_service.plot_workflow_durations(project)
@@ -38,10 +38,10 @@ def create_base_classes(dbsession):
     project = models.Project(
         ci_provider=CiProviders.circleci,
         git_provider=GitProviders.github,
-        name="shared",
+        name="worker",
         organization=organization,
-        label_analysis_job_name="labelanalysis",
-        regular_tests_job_name="build-3.10.5",
+        label_analysis_job_name="ATS",
+        regular_tests_job_name="test",
     )
     dbsession.add(project)
     dbsession.flush()
@@ -56,16 +56,18 @@ async def main():
 
     dbsession = get_dbsession()
 
-    project = dbsession.query(models.Project).first()
+    project = (
+        dbsession.query(models.Project).filter(models.Project.name == "worker").first()
+    )
     if project is None:
         project = create_base_classes(dbsession)
 
-    # await collect_data(config, dbsession, project)
+    await collect_data(config, dbsession, project)
 
     process_data(config, dbsession, project)
 
     # TODO: Actually save info in the DB
-    # dbsession.commit()
+    dbsession.commit()
 
     logger.info("=> Project totals")
     print(project.totals)
