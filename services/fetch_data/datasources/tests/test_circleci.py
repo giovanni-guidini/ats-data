@@ -49,17 +49,19 @@ class TestCircleCIDatasource(object):
                     "vcs": {},
                 }
             ],
-            "next_page_token": "string",
         }
 
         mock_response = MagicMock(name="mock_response")
         mock_response.json.return_value = example_response
+        mock_response.status_code = 200
         mock_httpx_client.return_value.__aenter__.return_value.request.return_value = (
             mock_response
         )
 
         datasource = CircleCIDatasource(self.config)
-        result = await datasource.get_all_project_pipelines(project)
+        items = []
+        async for item in datasource.get_all_project_pipelines(project):
+            items.append(item)
 
         expected_result = [
             {
@@ -76,13 +78,15 @@ class TestCircleCIDatasource(object):
                 "project": project,
             }
         ]
+        assert len(items) == 1
+        result = items[0]
         assert result == expected_result
 
         mock_httpx_client.return_value.__aenter__.return_value.request.assert_called_once_with(
             "GET",
             f"/project/gh/CircleCI-Public/api-preview-docs/pipeline",
             headers={"Circle-Token": "your_api_token_here"},
-            params=None,
+            params={"page-token": None},
         )
 
     @pytest.mark.asyncio
@@ -107,17 +111,19 @@ class TestCircleCIDatasource(object):
                     "stopped_at": "2019-08-24T14:15:22Z",
                 }
             ],
-            "next_page_token": "string",
         }
 
         mock_response = MagicMock()
         mock_response.json.return_value = example_response
+        mock_response.status_code = 200
         mock_httpx_client.return_value.__aenter__.return_value.request.return_value = (
             mock_response
         )
 
         datasource = CircleCIDatasource(self.config)
-        result = await datasource.get_pipeline_workflows(pipeline)
+        items = []
+        async for item in datasource.get_pipeline_workflows(pipeline):
+            items.append(item)
 
         expected_response = [
             {
@@ -136,13 +142,15 @@ class TestCircleCIDatasource(object):
                 "stopped_at": "2019-08-24T14:15:22Z",
             }
         ]
+        assert len(items) == 1
+        result = items[0]
         assert result == expected_response
 
         mock_httpx_client.return_value.__aenter__.return_value.request.assert_called_once_with(
             "GET",
             f"/pipeline/{pipeline.external_id}/workflow",
             headers={"Circle-Token": "your_api_token_here"},
-            params=None,
+            params={"page-token": None},
         )
 
     @pytest.mark.asyncio
@@ -167,17 +175,19 @@ class TestCircleCIDatasource(object):
                     "approval_request_id": "47bbf9d9-0b01-4281-9b67-9324ae3d0dff",
                 }
             ],
-            "next_page_token": "string",
         }
 
         mock_response = MagicMock()
         mock_response.json.return_value = example_response
+        mock_response.status_code = 200
         mock_httpx_client.return_value.__aenter__.return_value.request.return_value = (
             mock_response
         )
 
         datasource = CircleCIDatasource(self.config)
-        result = await datasource.get_workflow_jobs(workflow)
+        items = []
+        async for item in datasource.get_workflow_jobs(workflow):
+            items.append(item)
 
         expected_response = [
             {
@@ -196,13 +206,15 @@ class TestCircleCIDatasource(object):
                 "approval_request_id": "47bbf9d9-0b01-4281-9b67-9324ae3d0dff",
             }
         ]
+        assert len(items) == 1
+        result = items[0]
         assert result == expected_response
 
         mock_httpx_client.return_value.__aenter__.return_value.request.assert_called_once_with(
             "GET",
             f"/workflow/{workflow.external_id}/job",
             headers={"Circle-Token": "your_api_token_here"},
-            params=None,
+            params={"page-token": None},
         )
 
 
