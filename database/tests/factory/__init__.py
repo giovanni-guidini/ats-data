@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 from uuid import uuid4
 
@@ -32,6 +33,7 @@ class PipelineFactory(Factory):
     external_id = factory.LazyFunction(lambda: str(uuid4()))
     created_at = datetime(2023, 7, 30)
     project = factory.SubFactory(ProjectFactory)
+    number = factory.LazyFunction(lambda: random.randint(0, 1000000))
 
 
 class WorkflowFactory(Factory):
