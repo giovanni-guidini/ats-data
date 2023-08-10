@@ -26,7 +26,10 @@ class FetchDataService(object):
     ):
         all_ids = set(map(lambda item: item["id"], raw_data))
         ids_in_db = set(
-            self.dbsession.query(model.id).filter(model.id.in_(all_ids)).all()
+            item[0]
+            for item in self.dbsession.query(model.external_id)
+            .filter(model.external_id.in_(all_ids))
+            .all()  # returns tuples
         )
         # Instert models we don't yet have
         ids_to_insert = all_ids - ids_in_db
@@ -40,7 +43,7 @@ class FetchDataService(object):
         self.dbsession.add_all(objects_to_insert)
         # Update models we do have
         models_to_update = sorted(
-            self.dbsession.query(model.id).filter(model.id.in_(all_ids)).all(),
+            self.dbsession.query(model).filter(model.external_id.in_(ids_in_db)).all(),
             key=lambda item: item.external_id,
         )
         raw_data_to_update = sorted(
