@@ -6,3 +6,8 @@ __pycache__/
 *.pyc
 
 .vscode/
+
+.coverage
+coverage.xml
+coverage.json
+coverage.codecov.json
