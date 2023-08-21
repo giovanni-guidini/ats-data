@@ -4,6 +4,9 @@ flag_management:
     - name: "smart-labels"
       carryforward: true
       carryforward_mode: "labels"
+      statuses:
+        - type: "patch"
+
 
 cli:
   plugins:
