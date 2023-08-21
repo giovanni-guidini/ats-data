@@ -39,8 +39,7 @@ class ColorFormatter(logging.Formatter):
 def configure_logger(logger: logging.Logger, log_level=logging.INFO):
     # This if exists to avoid an issue where extra handlers would be added by tests that use runner.invoke()
     # Which would cause subsequent tests to failed due to repeated log lines
-    if not logger.hasHandlers():
-        ch = logging.StreamHandler()
-        ch.setFormatter(ColorFormatter())
-        logger.addHandler(ch)
+    ch = logging.StreamHandler()
+    ch.setFormatter(ColorFormatter())
+    logger.addHandler(ch)
     logger.setLevel(log_level)

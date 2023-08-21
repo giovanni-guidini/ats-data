@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v3
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install Codecov CLI
         run: |
           python -m pip install --upgrade pip
@@ -18,9 +21,6 @@ jobs:
       - name: Create commit report in codecov
         run: |
           codecovcli create-report -t ${{ secrets.CODECOV_TOKEN }}
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Static Analysis
         run: |
           codecovcli static-analysis --token ${{ secrets.CODECOV_STATIC_TOKEN }}
