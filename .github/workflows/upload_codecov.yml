@@ -1,0 +1,12 @@
+name: Upload-to-codecov
+
+on: [push]  # Run on any push event
+
+jobs:
+  upload-codecov:
+  runs-on: ubuntu-latest
+  steps:
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
