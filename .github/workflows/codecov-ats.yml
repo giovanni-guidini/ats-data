@@ -32,7 +32,7 @@ jobs:
           pip install -r requirements.txt
       - name: Label Analysis
         run: |
-          BASE_SHA=$(git rev-parse HEAD^)
+          BASE_SHA=$(git merge-base HEAD^ origin/main)
           codecovcli label-analysis --token ${{ secrets.CODECOV_STATIC_TOKEN }} --base-sha=$BASE_SHA
       - name: Upload to Codecov
         run: |
