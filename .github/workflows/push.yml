@@ -32,10 +32,10 @@ jobs:
           pip install codecov-cli
       - name: Create commit in codecov
         run: |
-          codecovcli create-commit -t ${{ secrets.CODECOV_TOKEN }} --git-service github
+          codecovcli create-commit --fail-on-error -t ${{ secrets.CODECOV_TOKEN }} --git-service github
       - name: Create commit report in codecov
         run: |
-          codecovcli create-report -t ${{ secrets.CODECOV_TOKEN }} --git-service github
+          codecovcli create-report --fail-on-error -t ${{ secrets.CODECOV_TOKEN }} --git-service github
 
   build-test-upload:
     runs-on: ubuntu-latest
