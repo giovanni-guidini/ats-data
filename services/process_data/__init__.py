@@ -61,8 +61,12 @@ class ProcessDataService(object):
     def calculate_statistics(self, durations: List[int]) -> dict:
         mean_duration = statistics.mean(durations) if durations != [] else None
         median_duration = statistics.median(durations) if durations != [] else None
-        stdev_duration = statistics.stdev(durations) if len(durations) > 1 else 0
-        deciles = statistics.quantiles(durations, n=10) if len(durations) > 1 else None
+        stdev_duration = statistics.pstdev(durations) if len(durations) > 1 else None
+        deciles = (
+            statistics.quantiles(durations, n=10, method="inclusive")
+            if len(durations) > 1
+            else None
+        )
         p90_duration = deciles[-1] if deciles else None
         return dict(
             mean_duration=mean_duration,
