@@ -1,7 +1,7 @@
 
 flag_management:
   individual_flags:
-    - name: "smart-labels"
+    - name: "smart-tests"
       carryforward: true
       carryforward_mode: "labels"
       statuses:
